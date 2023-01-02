@@ -1,0 +1,75 @@
+resources:
+  # Resource for polling the GitHub repository for changes
+  - name: repo
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/bhattraideb/flask-terraform
+      branch: main
+
+  # Resource for a container with Terraform for running the deployment stages
+  - name: tf-image
+    type: registry-image
+    icon: terraform
+    source:
+      repository: hashicorp/terraform
+
+  # Execute Terraform deployment
+  - task: terraform
+    image: tf-image
+    config:
+      platform: linux
+      inputs:
+        - name: repo
+      run:
+        path: /bin/sh
+        dir: repo/terraform/lambda
+        args:
+          - -ec
+          - |
+            terraform init
+            terraform apply -auto-approve
+        passed:
+          - test
+          - lint
+
+  # Resource for a container with Poetry for installing dependencies and running unit tests
+  - name: poetry-image
+    type: registry-image
+    icon: language-python
+    source:
+      repository: fnndsc/python-poetry
+
+  # Task for executing tests with Pytest. Should be a separate job
+  - task: unit-test
+    image: poetry-image
+    config:
+      platform: linux
+      inputs:
+      - name: repo
+      run:
+        path: /bin/sh
+        dir: repo
+        args:
+        - -ec
+        - |
+          poetry install
+          poetry run pytest
+        passed:
+          - lint
+
+  # Task for verifying code quality using black and isort
+  - task: lint
+    image: poetry-image
+    config:
+      platform: linux
+      inputs:
+      - name: repo
+      run:
+        path: ci/tasks/lint/task.sh
+        dir: repo
+
+
+
+
+
