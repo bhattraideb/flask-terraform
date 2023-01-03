@@ -1,0 +1,57 @@
+resources:
+  # Resource for polling the GitHub repository for changes
+  - name: repo
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/bhattraideb/flask-terraform
+      branch: main
+
+jobs:
+  - name: ci-build
+    plan:
+      - get: repo
+        trigger: true
+      - task: ci-build-task
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: python
+              tag: "3.9"
+          inputs:
+            - name: repo
+          run:
+            path: repo/src/ci/build.sh
+
+  # Task for verifying code quality using black and isort
+#  - name: lint
+#  - task: lint
+#    image: poetry-image
+#    config:
+#      platform: linux
+#      inputs:
+#        - name: repo
+#      run:
+#        path: ci/tasks/lint/task.sh
+#        dir: repo
+
+  # Task for executing tests with Pytest. Should be a separate job
+#  - name: test
+#  - task: unit-test
+#    image: poetry-image
+#    config:
+#      platform: linux
+#      inputs:
+#      - name: repo
+#      run:
+#        path: /bin/sh
+#        dir: repo
+#        args:
+#          - -ec
+#          - |
+#            poetry install
+#            poetry run pytest
+#        passed:
+#          - lint
