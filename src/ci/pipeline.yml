@@ -6,6 +6,8 @@ resources:
     source:
       uri: https://github.com/bhattraideb/flask-terraform
       branch: main
+      username: ((git-pat))
+      password: x-oauth-basic
 
 jobs:
   - name: ci-build
